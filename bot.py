@@ -1,47 +1,41 @@
-import os
-import openai
 import telebot
+import openai
 
-# Environment variables ishlatish (Railway-da shuni qo'shamiz)
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+# Shu yerga o'zingizning token va OpenAI API kalitingizni qo'ying
+TELEGRAM_TOKEN = "8524493737:AAEiCQGdNtY7iUIpOBDwgS7deQM7FPZElsw"
+OPENAI_API_KEY = "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"
 
-openai.api_key = OPENAI_API_KEY
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
+openai.api_key = OPENAI_API_KEY
 
 # Til tanlash tugmalari
-languages = ["O'zbek", "Русский", "English"]
-
 @bot.message_handler(commands=['start'])
-def start(message):
+def send_welcome(message):
     markup = telebot.types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
-    for lang in languages:
-        markup.add(lang)
+    markup.add("O'zbek", "Русский", "English")
     bot.send_message(
         message.chat.id,
-        "Salom! Men Sardor yaratgan StudyAi Assistantman.\n"
-        "Tilni tanlang / Выберите язык / Select language:",
+        "Salom! Men Sardor yaratgan StudyAi Assistantman.\nTilni tanlang / Выберите язык / Select language:",
         reply_markup=markup
     )
 
-@bot.message_handler(func=lambda m: m.text in languages)
+# Tilni tanlash
+@bot.message_handler(func=lambda m: m.text.strip().lower() in ["o'zbek", "русский", "english"])
 def set_language(message):
-    bot.send_message(message.chat.id, f"Siz {message.text} tilini tanladingiz! Endi siz bilan AI o‘rganamiz 😎")
+    language = message.text.strip()
+    bot.reply_to(message, f"Siz {language} tilini tanladingiz! Endi siz bilan AI o‘rganamiz 😎")
 
+# AI bilan javob berish
 @bot.message_handler(func=lambda m: True)
-def ai_reply(message):
+def ai_response(message):
     try:
-        response = openai.chat.completions.create(
+        response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "Siz foydalanuvchiga yordam beradigan botsiz."},
-                {"role": "user", "content": message.text}
-            ],
-            temperature=0.7
+            messages=[{"role": "user", "content": message.text}]
         )
-        answer = response.choices[0].message.content
-        bot.send_message(message.chat.id, answer)
+        answer = response['choices'][0]['message']['content']
+        bot.reply_to(message, answer)
     except Exception as e:
-        bot.send_message(message.chat.id, f"Xatolik yuz berdi: {str(e)}")
+        bot.reply_to(message, f"Xatolik yuz berdi: {e}")
 
 bot.infinity_polling()
