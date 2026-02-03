@@ -1,41 +1,41 @@
 import telebot
 import openai
+from telebot import types
 
-# -----------------------------
-# TOKEN va OpenAI API kaliti
-# -----------------------------
 TELEGRAM_TOKEN = "8524493737:AAEiCQGdNtY7iUIpOBDwgS7deQM7FPZElsw"
 OPENAI_API_KEY = "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"
 
-# OpenAI ni sozlash
 openai.api_key = OPENAI_API_KEY
-
-# Telegram bot
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
 
-# -----------------------------
+user_languages = {}
+
 # Start va til tanlash
-# -----------------------------
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
-    markup = telebot.types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
+    markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
     markup.add("O'zbek", "Русский", "English")
     bot.send_message(
-        message.chat.id, 
-        "Salom! Men Sardor yaratgan StudyAi Assistantman.\nTilni tanlang / Выберите язык / Select language:", 
+        message.chat.id,
+        "Salom! Men Sardor yaratgan StudyAi Assistantman.\nTilni tanlang / Выберите язык / Select language:",
         reply_markup=markup
     )
 
-# Tilni saqlash va javob berish
-user_languages = {}
-
+# Til tanlanganida
 @bot.message_handler(func=lambda m: m.text.strip() in ["O'zbek", "Русский", "English"])
 def set_language(message):
     language = message.text.strip()
     user_languages[message.chat.id] = language
-    bot.send_message(message.chat.id, f"Siz {language} tilini tanladingiz! Endi siz bilan AI o‘rganamiz 😎")
+    
+    # Keyboardni olib tashlash
+    remove_markup = types.ReplyKeyboardRemove()
+    bot.send_message(
+        message.chat.id,
+        f"Siz {language} tilini tanladingiz! Endi siz bilan AI o‘rganamiz 😎",
+        reply_markup=remove_markup
+    )
 
-# AI bilan chat
+# AI javob berish
 @bot.message_handler(func=lambda m: True)
 def ai_reply(message):
     if message.chat.id not in user_languages:
@@ -55,5 +55,4 @@ def ai_reply(message):
     except Exception as e:
         bot.send_message(message.chat.id, f"Xatolik yuz berdi: {e}")
 
-# Botni ishga tushurish
 bot.infinity_polling()
