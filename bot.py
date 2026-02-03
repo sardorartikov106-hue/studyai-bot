@@ -1,28 +1,26 @@
 import telebot
 import os
 
-# Tokenni Environment Variable orqali olish
-TOKEN = os.environ.get('TOKEN')
+TOKEN = os.getenv("TOKEN")  # .env dagi TOKEN ni oladi
 bot = telebot.TeleBot(TOKEN)
 
-LANGUAGES = ['O\'zbek', 'Русский', 'English']
-FAN_PANEL = ['Matematika', 'Fizika', 'Kimyo', 'Biologiya', 'Tarix', 'Geografiya', 'Ingliz tili', 'Ona tili']
-ADMIN_USER = '@S_28_08'
-
+# Start va til tanlash qismi
 @bot.message_handler(commands=['start'])
-def start(message):
-    menu = "Tilni tanlang / Выберите язык / Select language:\n"
-    for lang in LANGUAGES:
-        menu += f' - {lang}\n'
-    bot.reply_to(message, f"Salom! Men Sardor yaratgan StudyAi Assistantman.\n" + menu)
+def send_welcome(message):
+    markup = telebot.types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
+    markup.add("O'zbek", "Русский", "English")
+    bot.send_message(message.chat.id, 
+                     "Salom! Men Sardor yaratgan StudyAi Assistantman.\n"
+                     "Tilni tanlang / Выберите язык / Select language:", 
+                     reply_markup=markup)
 
-@bot.message_handler(func=lambda message: message.text in FAN_PANEL)
-def fan_panel(message):
-    bot.reply_to(message, f"Siz {message.text} fanini tanladingiz. Savolingizni yozing, AI javob beradi.")
+@bot.message_handler(func=lambda m: m.text.strip().lower() in ["o'zbek", "русский", "english"])
+def set_language(message):
+    language = message.text.strip()
+    bot.reply_to(message, f"Siz {language} tilini tanladingiz! Endi siz bilan AI o‘rganamiz 😎")
 
-@bot.message_handler(func=lambda message: message.text not in FAN_PANEL and message.text not in LANGUAGES)
-def ai_reply(message):
-    bot.reply_to(message, f"AI javob: Siz yozdingiz '{message.text}'")
-    bot.send_message(ADMIN_USER, f"Foydalanuvchi {message.from_user.username} yozdi: {message.text}")
+@bot.message_handler(func=lambda m: True)
+def echo_all(message):
+    bot.reply_to(message, f"Siz yozdingiz: {message.text}\n(Endi AI bu yerda javob beradi)")
 
-bot.polling()
+bot.infinity_polling()
