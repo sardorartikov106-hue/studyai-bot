@@ -1,12 +1,12 @@
 import telebot
-import openai
+from openai import OpenAI
 
-# Telegram va OpenAI kalitlaring
+# Telegram va OpenAI kalitlari
 TELEGRAM_TOKEN = "8524493737:AAEiCQGdNtY7iUIpOBDwgS7deQM7FPZElsw"
 OPENAI_API_KEY = "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"
 
-# OpenAI konfiguratsiyasi
-openai.api_key = OPENAI_API_KEY
+# OpenAI client yaratish
+client = OpenAI(api_key=OPENAI_API_KEY)
 
 # Telegram bot
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
@@ -31,7 +31,7 @@ def set_language(message):
 @bot.message_handler(func=lambda m: True)
 def echo_all(message):
     try:
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": message.text}]
         )
