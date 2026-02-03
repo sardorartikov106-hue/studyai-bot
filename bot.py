@@ -11,34 +11,41 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 # Telegram bot
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
 
-# Til tanlash tugmalari
-@bot.message_handler(commands=['start'])
-def send_welcome(message):
-    markup = telebot.types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
-    markup.add("O'zbek", "Русский", "English")
-    bot.send_message(message.chat.id, 
-                     "Salom! Men Sardor yaratgan StudyAi Assistantman.\n"
-                     "Tilni tanlang / Выберите язык / Select language:", 
-                     reply_markup=markup)
+# Foydalanuvchi tillarini saqlash (chat_id => language)
+user_languages = {}
 
-# Tilni tanlash
-@bot.message_handler(func=lambda m: m.text.strip().lower() in ["o'zbek", "русский", "english"])
+# Til tanlash tugmalari
+language_markup = telebot.types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
+language_markup.add("O'zbek", "Русский", "English")
+
+@bot.message_handler(commands=['start'])
+def start_command(message):
+    bot.send_message(
+        message.chat.id,
+        "Salom! Men Sardor yaratgan StudyAi Assistantman.\n"
+        "Tilni tanlang / Выберите язык / Select language:",
+        reply_markup=language_markup
+    )
+
+@bot.message_handler(func=lambda m: m.text.strip() in ["O'zbek", "Русский", "English"])
 def set_language(message):
     language = message.text.strip()
-    bot.reply_to(message, f"Siz {language} tilini tanladingiz! Endi siz bilan AI o‘rganamiz 😎")
+    user_languages[message.chat.id] = language
+    bot.send_message(message.chat.id, f"Siz {language} tilini tanladingiz! Endi siz bilan AI o‘rganamiz 😎")
 
-# AI bilan javob
 @bot.message_handler(func=lambda m: True)
-def echo_all(message):
+def chat_with_ai(message):
+    # Foydalanuvchi hali til tanlamagan bo‘lsa default O'zbek
+    language = user_languages.get(message.chat.id, "O'zbek")
+
     try:
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": message.text}]
         )
         answer = response.choices[0].message.content
-        bot.reply_to(message, answer)
+        bot.send_message(message.chat.id, answer)
     except Exception as e:
-        bot.reply_to(message, f"Xatolik yuz berdi: {e}")
+        bot.send_message(message.chat.id, f"Xatolik yuz berdi: {e}")
 
-# Botni ishga tushurish
 bot.infinity_polling()
