@@ -1,60 +1,55 @@
 import telebot
 
-TELEGRAM_TOKEN = "TELEGRAM_TOKENINGNI_BU_YERGA_QOY"
+# ⬇️ SHU IKKITA JOYGA O'ZING QO'YASAN
+TELEGRAM_TOKEN = 8524493737:AAEiCQGdNtY7iUIpOBDwgS7deQM7FPZElsw
+OPENAI_API_KEY = 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
+
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
 
-user_step = {}
+user_state = {}
 
-# ===== /start =====
 @bot.message_handler(commands=['start'])
 def start(message):
     kb = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
     kb.add("O'zbek", "Русский", "English")
-
-    user_step[message.chat.id] = "language"
+    user_state[message.chat.id] = "lang"
 
     bot.send_message(
         message.chat.id,
-        "Tilni tanlang:",
+        "👉 TUGMADAN BOSIB tilni tanla:",
         reply_markup=kb
     )
 
-# ===== TIL TANLASH =====
-@bot.message_handler(func=lambda m: user_step.get(m.chat.id) == "language")
-def choose_language(message):
-    if message.text not in ["O'zbek", "Русский", "English"]:
-        bot.send_message(message.chat.id, "Iltimos, tugmadan tanlang 👇")
+@bot.message_handler(func=lambda m: True)
+def handler(message):
+    chat_id = message.chat.id
+    text = message.text.strip()
+
+    if user_state.get(chat_id) == "lang":
+        if text in ["O'zbek", "Русский", "English"]:
+            user_state[chat_id] = "menu"
+
+            menu = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
+            menu.add("📚 Savol berish")
+            menu.add("ℹ️ Yordam")
+
+            bot.send_message(
+                chat_id,
+                f"✅ {text} tili tanlandi",
+                reply_markup=menu
+            )
+        else:
+            bot.send_message(chat_id, "❌ Iltimos, tugmadan tanla")
         return
 
-    user_step[message.chat.id] = "menu"
+    if text == "📚 Savol berish":
+        bot.send_message(chat_id, "Savolingni yoz ✍️")
+        return
 
-    menu = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
-    menu.add("📚 Savol berish")
-    menu.add("ℹ️ Yordam")
+    if text == "ℹ️ Yordam":
+        bot.send_message(chat_id, "Men StudyAi botman 🤖")
+        return
 
-    bot.send_message(
-        message.chat.id,
-        f"✅ {message.text} tili tanlandi",
-        reply_markup=menu
-    )
-
-# ===== SAVOL BERISH =====
-@bot.message_handler(func=lambda m: m.text == "📚 Savol berish")
-def ask(message):
-    user_step[message.chat.id] = "ask"
-    bot.send_message(message.chat.id, "Savolingni yoz ✍️")
-
-# ===== YORDAM =====
-@bot.message_handler(func=lambda m: m.text == "ℹ️ Yordam")
-def help_cmd(message):
-    bot.send_message(message.chat.id, "Men StudyAi botman 🤖")
-
-# ===== ODDIY JAVOB (ENG OXIRIDA!) =====
-@bot.message_handler(func=lambda m: True)
-def fallback(message):
-    if user_step.get(message.chat.id) == "ask":
-        bot.send_message(message.chat.id, f"🧠 AI javobi:\n{message.text}")
-    else:
-        bot.send_message(message.chat.id, "Menyudan foydalan 👇")
+    bot.send_message(chat_id, f"Siz yozdingiz: {text}")
 
 bot.infinity_polling()
